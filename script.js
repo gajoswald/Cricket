@@ -4,137 +4,94 @@
      then score2 is activated 
 */
 
-let score1 = {
-  runs: 0,
-  outs: 0,
-  balls: 1,
-  overs: 0,
-  addOuts: function() {
-    if (key === "p") {
-      this.outs++;
-    }
-  },
-  addBalls: function() {
-    if (key === "b") {
-      this.balls++;
-    }
-  },
-  addOvers: function() {
-    if (this.balls > 5) { //when # of balls in an over reaches 6
-      this.balls = 0;
-      this.overs++; //1 over = 6 balls
-    }
+class Team {
+  constructor() {
+    this.runs = 0
+    this.outs = 0
+    this.balls = 0
+    this.overs = 0
   }
-};
 
-let score2 = {
-  runs: 0,
-  outs: 0,
-  balls: 1,
-  overs: 0,
-  addOuts: function() {
-    if (key === "p") {
-      this.outs++;
-    }
-  },
-  addBalls: function() {
-    if (key === "b") {
-      this.balls++;
-    }
-  },
-  addOvers: function() {
-    if (this.balls > 5) { //when # of balls in an over reaches 6
-      this.balls = 0;
-      this.overs++; //1 over = 6 balls
+  addRuns(runs) { this.runs += runs }
+  addOut() { this.outs++ }
+  addBall() { this.balls++ }
+
+  addOvers() {
+    if( this.balls > 5 ) {
+      this.balls = 0
+      this.overs++ 
     }
   }
-};
+}
+
+let teams = [
+  new Team(),
+  new Team()
+]
+
+currentTeam = 0
+
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   background(255);
+  textAlign(CENTER);
+  textFont("Georgia");
+  rectMode(CENTER); //rect for score 1
+  textSize(20);
+  noLoop()
 }
 
 function draw() {
   background(255);
   noStroke();
   fill(0);
-  textSize(20);
-  textAlign(CENTER);
-  textFont("Georgia");
+  
   for (let i = 0; i < 2; i++) {
     text("runs  outs  balls", width / 4 + width / 2 * i, height / 2 - 40);
   }
 
   text("Team 1", width / 4, height / 4); //text for score1
-  text(score1.runs + "   " + score1.outs + "    " + score1.overs + "." + score1.balls, width / 4, height / 2);
-
-  rectMode(CENTER); //rect for score 1
+  text(teams[0].runs + "   " + teams[0].outs + "    " + teams[0].overs + "." + teams[0].balls, width / 4, height / 2);
+  
   fill(255, 0, 0, 100);
   rect(width / 4, height / 2, 140, 40);
 
   fill(0); //text for score2
   text("Team 2", 3 / 4 * width, height / 4);
-  text(score2.runs + "   " + score2.outs + "    " + score2.overs + "." + score2.balls, 3 / 4 * width, height / 2);
+  text(teams[1].runs + "   " + teams[1].outs + "    " + teams[1].overs + "." + teams[1].balls, 3 / 4 * width, height / 2);
 
   fill(0, 0, 255, 100); //rect for score2
   rect(3 / 4 * width, height / 2, 140, 40);
 
-  score1.addOvers();
-  score2.addOvers();
+  teams[0].addOvers();
+  teams[1].addOvers();
 
-  if (score1.outs > 10 || score1.overs > 19) { //when all 11 players are out on team 1 or overs reach 20
-    console.log("innings 1 is over");
-    fill(255, 0, 0);
-    text(score1.runs + " runs to beat", width / 2, height / 2)
-  }
-
-  if (score2.outs > 10 || score2.overs > 19) {  //when all 11 players are out on team 2 or overs reach 20
-    console.log("innings 2 is over");
-    if (score2.runs > score1.runs) {
-      console.log("player 2 wins");
-    }
-    else {
-      console.log("player 1 wins");
+  if( teams[currentTeam].outs > 10 || teams[currentTeam].overs > 19 ) {
+    text("innings is over", width/2 - textWidth("innings is over")/2, 20 )
+    currentTeam = currentTeam + 1
+    if( currentTeam > 1 ) {
+      const winningTeam = teams[0].runs > teams[1].runs ? "Team 1" : "Team 2"
+      text(`${winningTeam} wins`, width/2 - textWidth(`${winningTeam} wins`)/2, 40)
     }
   }
 }
 
 function keyPressed() { //issue: the runs only get added until after the mouse click
-  if (score1.outs < 11) {
-    if (key === "1") {
-      score1.runs += 1;
-    }
-    if (key === "2") {
-      score1.runs += 2;
-    }
-    if (key === "4") {
-      score1.runs += 4;
-    }
-    if (key === "6") {
-      score1.runs += 6;
-    }
-    score1.addBalls();
-    score1.addOuts();
+  if( key === 'p' ) {
+    teams[currentTeam].addOut()
+    redraw()
   }
-  else {
-    if (score2.outs < 11) {
-      if (key === "1") {
-        score2.runs += 1;
-      }
-      if (key === "2") {
-        score2.runs += 2;
-      }
-      if (key === "4") {
-        score2.runs += 4;
-      }
-      if (key === "6") {
-        score2.runs += 6;
-      }
-      score2.addBalls();
-      score2.addOuts();
+  if( key === 'b' ) {
+    teams[currentTeam].addBall()
+    redraw()
+  }
+  if (teams[currentTeam].outs < 11) {
+    if( key === "1" || key === "2" || key === "4" || key === "6" ) {
+      teams[currentTeam].addRuns(int(key))
+      redraw()
     }
+    teams[currentTeam].addBall();
+    teams[currentTeam].addOut();
   }
 }
-
-
