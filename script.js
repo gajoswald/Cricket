@@ -1,67 +1,99 @@
 /*
-     when overs reaches 20 or outs reaches 11
-     innings is over for team 1 and can't add anymore to score1
-     then score2 is activated 
+  when overs reaches 20 or outs reaches 11
+  innings is over for team 1 and can't add anymore to score1
+  then score2 is activated 
 */
+class CricketMatch {
+  static MAX_OUTS = 11
+  static MAX_OVERS = 20
 
-class Team {
   constructor() {
-    this.stats = {
-      runs: 0,
+    this.teams = {
+      a: new Team(),
+      b: new Team(),
+      current: "a",
+      next: "b"
+    }
+    this.outs = 0
+    this.balls = 0
+    this.overs = 0
+    this.results = []
+  }
+
+  get teamAScoreboard() { return this.#scoreboard("a") }
+  get teamBScoreboard() { return this.#scoreboard("b") }
+
+  #scoreboard(team) {
+    let scoreboard = {
+      runs: this.teams[team].runs, 
       outs: 0,
       balls: 0,
       overs: 0
     }
-    this.results = [];
-  }
-
-  get runs() { return this.stats.runs }
-  get outs() { return this.stats.outs }
-  get balls() { return this.stats.balls }
-  get overs() { return this.stats.overs }
-
-  addRuns(runs) { 
-    this.addResult({
-      type: "runs",
-      number: runs
-    })
-  }
-  
-  addOut() { 
-    this.addResult({
-      type: "outs",
-    })
-  }
-  
-  addBall() { 
-    this.addResult({
-      type: "balls",
-    })
-    if( this.balls > 5 ) {
-      this.addOver() 
+    
+    if( this.teams.current === team ) {
+      scoreboard = {...scoreboard,
+                    outs: this.outs, 
+                    balls: this.balls, 
+                    overs: this.overs
+                   }  
     }
+    return scoreboard
   }
 
-  addOver() {
-    this.stats.balls = 0
-    this.addResult({
-      type: "overs",
-    })
+  changeSides() {
+    this.outs = 0
+    this.balls = 0
+    this.overs = 0
+    let temp = this.teams.current;
+    this.teams.current = this.teams.next;
+    this.teams.next = temp;
   }
 
   addResult(result) {
-    this.stats[result.type] += result.type === "runs" ? result.number : 1  
+    let newResult = {
+      team: this.teams.current,
+      annotations: []
+    }
+    
+    if (Number.isInteger(result) ) {
+      newResult.type = "runs"
+      newResult.number = result
+      this.balls++
+    } else if (result === "out") {
+      newResult.type = "out"
+      this.outs++
+    } else {
+      newResult.type = "ball"
+      this.balls++
+    }
+
+    if (this.balls > 5) {
+      newResult.annotations.push("over")
+      this.overs++
+    }
+
+    if (this.outs === CricketMatch.MAX_OUTS || this.overs === CricketMatch.MAX_OVERS) {
+      this.changeSides()
+      newResult.annotations.push("innings complete")      
+    }
+
+    this.results.push(newResult)
+    
+    this.teams[this.teams.current].runs = this.results
+      .filter( result => result.team === this.teams.current && result.type === "runs" )
+      .reduce( (sum,result) => sum += result.number, 0 )
   }
 }
 
-let teams = [
-  new Team(),
-  new Team()
-]
+class Team {
+  constructor() {
+    // arbitrary information
+    this.runs = 0
+  }
+}
 
-currentTeam = 0
-
-let results = []
+let match = new CricketMatch()
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -78,45 +110,45 @@ function draw() {
   noStroke();
   fill(0);
   
+  const teamA = match.teamAScoreboard;
+  const teamB = match.teamBScoreboard;
+
   for (let i = 0; i < 2; i++) {
     text("runs  outs  balls", width / 4 + width / 2 * i, height / 2 - 40);
   }
 
   text("Team 1", width / 4, height / 4); //text for score1
-  text(teams[0].runs + "   " + teams[0].outs + "    " + teams[0].overs + "." + teams[0].balls, width / 4, height / 2);
-  
+  text(teamA.runs + "   " + teamA.outs + "    " + teamA.overs + "." + teamA.balls, width / 4, height / 2);
+
   fill(255, 0, 0, 100);
   rect(width / 4, height / 2, 140, 40);
 
   fill(0); //text for score2
   text("Team 2", 3 / 4 * width, height / 4);
-  text(teams[1].runs + "   " + teams[1].outs + "    " + teams[1].overs + "." + teams[1].balls, 3 / 4 * width, height / 2);
+  text(teamB.runs + "   " + teamB.outs + "    " + teamB.overs + "." + teamB.balls, 3 / 4 * width, height / 2);
 
   fill(0, 0, 255, 100); //rect for score2
   rect(3 / 4 * width, height / 2, 140, 40);
 
-  if( teams[currentTeam].outs > 10 || teams[currentTeam].overs > 19 ) {
-    text("innings is over", width/2 - textWidth("innings is over")/2, 20 )
-    currentTeam = currentTeam + 1
-    if( currentTeam > 1 ) {
-      const winningTeam = teams[0].runs > teams[1].runs ? "Team 1" : "Team 2"
-      text(`${winningTeam} wins`, width/2 - textWidth(`${winningTeam} wins`)/2, 40)
-    }
-  }
+  // if (teams[currentTeam].outs > 10 || teams[currentTeam].overs > 19) {
+  //   text("innings is over", width / 2 - textWidth("innings is over") / 2, 20)
+  //   currentTeam = currentTeam + 1
+  //   if (currentTeam > 1) {
+  //     const winningTeam = teams[0].runs > teams[1].runs ? "Team 1" : "Team 2"
+  //     text(`${winningTeam} wins`, width / 2 - textWidth(`${winningTeam} wins`) / 2, 40)
+  //   }
+  // }
 }
 
 function keyPressed() { //issue: the runs only get added until after the mouse click
-  if( key === 'p' ) {
-    teams[currentTeam].addOut()
+  if (key === 'p') {
+    match.addResult("out")
   }
-  if( key === 'b' ) {
-    teams[currentTeam].addBall()
+  if (key === 'b') {
+    match.addResult("ball")
   }
-  if (teams[currentTeam].outs < 11) {
-    if( key === "1" || key === "2" || key === "4" || key === "6" ) {
-      teams[currentTeam].addRuns(int(key))
-      teams[currentTeam].addBall();
-    }
+  if (key === "1" || key === "2" || key === "4" || key === "6") {
+    match.addResult(int(key))
   }
   redraw()
-} 
+}
