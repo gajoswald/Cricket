@@ -6,21 +6,51 @@
 
 class Team {
   constructor() {
-    this.runs = 0
-    this.outs = 0
-    this.balls = 0
-    this.overs = 0
+    this.stats = {
+      runs: 0,
+      outs: 0,
+      balls: 0,
+      overs: 0
+    }
+    this.results = [];
   }
 
-  addRuns(runs) { this.runs += runs }
-  addOut() { this.outs++ }
-  addBall() { this.balls++ }
+  get runs() { return this.stats.runs }
+  get outs() { return this.stats.outs }
+  get balls() { return this.stats.balls }
+  get overs() { return this.stats.overs }
 
-  addOvers() {
+  addRuns(runs) { 
+    this.addResult({
+      type: "runs",
+      number: runs
+    })
+  }
+  
+  addOut() { 
+    this.addResult({
+      type: "outs",
+    })
+  }
+  
+  addBall() { 
+    this.addResult({
+      type: "balls",
+    })
     if( this.balls > 5 ) {
-      this.balls = 0
-      this.overs++ 
+      this.addOver() 
     }
+  }
+
+  addOver() {
+    this.stats.balls = 0
+    this.addResult({
+      type: "overs",
+    })
+  }
+
+  addResult(result) {
+    this.stats[result.type] += result.type === "runs" ? result.number : 1  
   }
 }
 
@@ -31,6 +61,7 @@ let teams = [
 
 currentTeam = 0
 
+let results = []
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -64,9 +95,6 @@ function draw() {
   fill(0, 0, 255, 100); //rect for score2
   rect(3 / 4 * width, height / 2, 140, 40);
 
-  teams[0].addOvers();
-  teams[1].addOvers();
-
   if( teams[currentTeam].outs > 10 || teams[currentTeam].overs > 19 ) {
     text("innings is over", width/2 - textWidth("innings is over")/2, 20 )
     currentTeam = currentTeam + 1
@@ -80,18 +108,15 @@ function draw() {
 function keyPressed() { //issue: the runs only get added until after the mouse click
   if( key === 'p' ) {
     teams[currentTeam].addOut()
-    redraw()
   }
   if( key === 'b' ) {
     teams[currentTeam].addBall()
-    redraw()
   }
   if (teams[currentTeam].outs < 11) {
     if( key === "1" || key === "2" || key === "4" || key === "6" ) {
       teams[currentTeam].addRuns(int(key))
-      redraw()
+      teams[currentTeam].addBall();
     }
-    teams[currentTeam].addBall();
-    teams[currentTeam].addOut();
   }
-}
+  redraw()
+} 
