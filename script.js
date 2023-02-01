@@ -20,18 +20,19 @@ class CricketMatch {
 
   #scoreboard(team) {
     let scoreboard = {
-      runs: this.teams[team].runs, 
+      runs: this.teams[team].runs,
       outs: 0,
       balls: 0,
       overs: 0
     }
-    
-    if( this.teams.current === team ) {
-      scoreboard = {...scoreboard,
-                    outs: this.outs, 
-                    balls: this.balls, 
-                    overs: this.overs
-                   }  
+
+    if (this.teams.current === team) {
+      scoreboard = {
+        ...scoreboard,
+        outs: this.outs,
+        balls: this.balls,
+        overs: this.overs
+      }
     }
     return scoreboard
   }
@@ -50,8 +51,8 @@ class CricketMatch {
       team: this.teams.current,
       annotations: []
     }
-    
-    if (Number.isInteger(result) ) {
+
+    if (Number.isInteger(result)) {
       newResult.type = "runs"
       newResult.number = result
       this.balls++
@@ -70,14 +71,14 @@ class CricketMatch {
 
     if (this.outs === CricketMatch.MAX_OUTS || this.overs === CricketMatch.MAX_OVERS) {
       this.changeSides()
-      newResult.annotations.push("innings complete")      
+      newResult.annotations.push("innings complete")
     }
 
     this.results.push(newResult)
-    
+
     this.teams[this.teams.current].runs = this.results
-      .filter( result => result.team === this.teams.current && result.type === "runs" )
-      .reduce( (sum,result) => sum += result.number, 0 )
+      .filter(result => result.team === this.teams.current && result.type === "runs")
+      .reduce((sum, result) => sum += result.number, 0)
   }
 }
 
@@ -89,69 +90,117 @@ class Team {
 }
 
 class TeamDisplay {
-  static categories = ["runs","outs","balls"]
-  static #padding = {top:5,bottom:5,inter:2}
-  
-  constructor( drawingInfo, data ) {
+  static #padding = { top: 5, bottom: 5, inter: 2 }
+
+  constructor(drawingInfo, data) {
     this.drawingInfo = drawingInfo
     this.data = data
   }
 
   draw() {
-    const w = this.drawingInfo.w/TeamDisplay.categories.length;
-    textSize((this.drawingInfo.h - TeamDisplay.#padding.top - TeamDisplay.#padding.bottom - TeamDisplay.#padding.inter)/2)
+    const w = this.drawingInfo.w / MatchDisplay.categories.length;
+    textSize((this.drawingInfo.h - TeamDisplay.#padding.top - TeamDisplay.#padding.bottom - TeamDisplay.#padding.inter) / 2)
 
-    for( let i = 0; i < TeamDisplay.categories.length; i++ ) {
+    for (let i = 0; i < MatchDisplay.categories.length; i++) {
       const x = this.drawingInfo.x + i * w
       let y = this.drawingInfo.y
-      fill( this.drawingInfo.color )
+      fill(this.drawingInfo.color)
       stroke("black")
-      rect( x,y,w,this.drawingInfo.h )
+      rect(x, y, w, this.drawingInfo.h)
       noStroke()
-      fill( this.drawingInfo.textColor )
+      fill(this.drawingInfo.textColor)
       y += TeamDisplay.#padding.top + textSize()
-      text( TeamDisplay.categories[i], 
-           x + w/2 - textWidth(TeamDisplay.categories[i])/2, 
-           y )
+      text(MatchDisplay.categories[i],
+        x + w / 2 - textWidth(MatchDisplay.categories[i]) / 2,
+        y)
       y += TeamDisplay.#padding.inter + textSize()
-      text( this.data[TeamDisplay.categories[i]],
-          x + w/2 - textWidth(this.data[TeamDisplay.categories[i]])/2,
-          y )
+      text(this.data[MatchDisplay.categories[i]],
+        x + w / 2 - textWidth(this.data[MatchDisplay.categories[i]]) / 2,
+        y)
     }
   }
 }
 
+class MatchDisplay {
+  static categories = ["runs", "outs", "balls"]
+
+  constructor(drawingInfo, match) {
+    this.drawingInfo = drawingInfo
+    this.match = match
+    this.#setupDefaultDrawingValues()
+    this.#setupDisplays()
+  }
+
+  #setupDefaultDrawingValues() {
+    this.drawingInfo.x = this.drawingInfo.x ||
+      width / 4 - this.drawingInfo.tdWidth / 2
+    this.drawingInfo.y = this.drawingInfo.y ||
+      height / 2 - this.drawingInfo.tdHeight / 2
+
+    this.drawingInfo.w = this.drawingInfo.w || width
+    this.drawingInfo.h = this.drawingInfo.h || this.drawingInfo.tdHeight    
+  }
+
+  #setupDisplays() {
+    this.displays = {
+      a: new TeamDisplay({
+        x: this.drawingInfo.x,
+        y: this.drawingInfo.y,
+        w: this.drawingInfo.tdWidth,
+        h: this.drawingInfo.tdHeight,
+        color: this.drawingInfo.teamABGColor,
+        textColor: this.drawingInfo.textColor
+      },
+        this.match.teamAScoreboard ),
+      b: new TeamDisplay({
+        x: this.drawingInfo.x + this.drawingInfo.w/2,
+        y: this.drawingInfo.y,
+        w: this.drawingInfo.tdWidth,
+        h: this.drawingInfo.tdHeight,
+        color: this.drawingInfo.teamBBGColor,
+        textColor: this.drawingInfo.textColor
+      },
+        this.match.teamBScoreboard ),
+    }    
+  }
+
+  updateData() {
+    this.displays.a.data = this.match.teamAScoreboard
+    this.displays.b.data = this.match.teamBScoreboard
+  }
+
+  draw() {
+    this.displays.a.draw()
+    this.displays.b.draw()
+  }
+}
+
 let match = new CricketMatch()
+let matchDisplay
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   background(255);
   textFont("Georgia");
   noLoop()
+  matchDisplay = new MatchDisplay(
+    {
+      tdWidth: 140,
+      tdHeight: 40,
+      teamABGColor: color(255, 0, 0, 100),
+      teamBBGColor: color(0, 0, 255, 100),
+      textColor: color("black")
+    },
+    match
+  )
 }
 
 function draw() {
   background(255);
   noStroke();
   fill(0);
-  
-  const teamA = match.teamAScoreboard;
-  const teamB = match.teamBScoreboard;
-
-  let displayA = new TeamDisplay({
-      x:width/4 - 70, 
-      y:height/2 - 20,
-      w:140,
-      h:40,
-      color: color(255, 0, 0, 100),
-      textColor: color("black")
-    }, 
-    teamA 
-  );
-  displayA.draw()
-  let displayB =  new TeamDisplay(
-    {x:3*width/4 - 70, y:height/2 - 20, w:140,h:40, color: color(0, 0, 255, 100), textColor: color('black') }, teamB );
-  displayB.draw();
+  matchDisplay.updateData()
+  matchDisplay.draw()
 }
 
 function keyPressed() { //issue: the runs only get added until after the mouse click
