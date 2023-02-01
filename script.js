@@ -1,8 +1,3 @@
-/*
-  when overs reaches 20 or outs reaches 11
-  innings is over for team 1 and can't add anymore to score1
-  then score2 is activated 
-*/
 class CricketMatch {
   static MAX_OUTS = 11
   static MAX_OVERS = 20
@@ -93,15 +88,45 @@ class Team {
   }
 }
 
+class TeamDisplay {
+  static categories = ["runs","outs","balls"]
+  static #padding = {top:5,bottom:5,inter:2}
+  
+  constructor( drawingInfo, data ) {
+    this.drawingInfo = drawingInfo
+    this.data = data
+  }
+
+  draw() {
+    const w = this.drawingInfo.w/TeamDisplay.categories.length;
+    textSize((this.drawingInfo.h - TeamDisplay.#padding.top - TeamDisplay.#padding.bottom - TeamDisplay.#padding.inter)/2)
+
+    for( let i = 0; i < TeamDisplay.categories.length; i++ ) {
+      const x = this.drawingInfo.x + i * w
+      let y = this.drawingInfo.y
+      fill( this.drawingInfo.color )
+      stroke("black")
+      rect( x,y,w,this.drawingInfo.h )
+      noStroke()
+      fill( this.drawingInfo.textColor )
+      y += TeamDisplay.#padding.top + textSize()
+      text( TeamDisplay.categories[i], 
+           x + w/2 - textWidth(TeamDisplay.categories[i])/2, 
+           y )
+      y += TeamDisplay.#padding.inter + textSize()
+      text( this.data[TeamDisplay.categories[i]],
+          x + w/2 - textWidth(this.data[TeamDisplay.categories[i]])/2,
+          y )
+    }
+  }
+}
+
 let match = new CricketMatch()
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   background(255);
-  textAlign(CENTER);
   textFont("Georgia");
-  rectMode(CENTER); //rect for score 1
-  textSize(20);
   noLoop()
 }
 
@@ -113,31 +138,20 @@ function draw() {
   const teamA = match.teamAScoreboard;
   const teamB = match.teamBScoreboard;
 
-  for (let i = 0; i < 2; i++) {
-    text("runs  outs  balls", width / 4 + width / 2 * i, height / 2 - 40);
-  }
-
-  text("Team 1", width / 4, height / 4); //text for score1
-  text(teamA.runs + "   " + teamA.outs + "    " + teamA.overs + "." + teamA.balls, width / 4, height / 2);
-
-  fill(255, 0, 0, 100);
-  rect(width / 4, height / 2, 140, 40);
-
-  fill(0); //text for score2
-  text("Team 2", 3 / 4 * width, height / 4);
-  text(teamB.runs + "   " + teamB.outs + "    " + teamB.overs + "." + teamB.balls, 3 / 4 * width, height / 2);
-
-  fill(0, 0, 255, 100); //rect for score2
-  rect(3 / 4 * width, height / 2, 140, 40);
-
-  // if (teams[currentTeam].outs > 10 || teams[currentTeam].overs > 19) {
-  //   text("innings is over", width / 2 - textWidth("innings is over") / 2, 20)
-  //   currentTeam = currentTeam + 1
-  //   if (currentTeam > 1) {
-  //     const winningTeam = teams[0].runs > teams[1].runs ? "Team 1" : "Team 2"
-  //     text(`${winningTeam} wins`, width / 2 - textWidth(`${winningTeam} wins`) / 2, 40)
-  //   }
-  // }
+  let displayA = new TeamDisplay({
+      x:width/4 - 70, 
+      y:height/2 - 20,
+      w:140,
+      h:40,
+      color: color(255, 0, 0, 100),
+      textColor: color("black")
+    }, 
+    teamA 
+  );
+  displayA.draw()
+  let displayB =  new TeamDisplay(
+    {x:3*width/4 - 70, y:height/2 - 20, w:140,h:40, color: color(0, 0, 255, 100), textColor: color('black') }, teamB );
+  displayB.draw();
 }
 
 function keyPressed() { //issue: the runs only get added until after the mouse click
